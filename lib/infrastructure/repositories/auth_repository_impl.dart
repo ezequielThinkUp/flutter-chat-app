@@ -1,24 +1,25 @@
-import 'package:dio/dio.dart';
+// Removed unused import
 import 'package:chat/domain/entities/auth_result.dart';
 import 'package:chat/domain/entities/user.dart';
 import 'package:chat/domain/repositories/auth_repository.dart';
-import 'package:chat/infrastructure/services/auth_service.dart';
+import 'package:chat/data/datasources/auth/auth_datasource.dart';
 import 'package:chat/infrastructure/storage/secure_storage.dart';
 import 'package:chat/infrastructure/utils/jwt_utils.dart';
 
 /// Implementación del repositorio de autenticación.
 ///
-/// Coordina las operaciones entre el servicio HTTP y las entidades de dominio.
+/// Coordina las operaciones entre el DataSource y las entidades de dominio.
 /// Maneja tokens en memoria y almacenamiento seguro.
+/// Siguiendo principios de Clean Architecture: Repository → DataSource → API
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthService _authService;
+  final AuthDataSource _authDataSource;
   final SecureStorage _secureStorage;
 
   // Token en memoria para acceso rápido
   String? _cachedToken;
   User? _cachedUser;
 
-  AuthRepositoryImpl(this._authService, this._secureStorage);
+  AuthRepositoryImpl(this._authDataSource, this._secureStorage);
 
   @override
   Future<AuthResult> login({
@@ -26,7 +27,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      final response = await _authService.login({
+      print('🏛️ AuthRepository: Iniciando login...');
+
+      // Usar DataSource en lugar de servicio directo
+      final response = await _authDataSource.login({
         'email': email,
         'password': password,
       });
@@ -44,19 +48,12 @@ class AuthRepositoryImpl implements AuthRepository {
         expiresAt: authResult.expiresAt,
       );
 
-      print('✅ Login exitoso y sesión guardada');
+      print('✅ AuthRepository: Login exitoso y sesión guardada');
       return authResult;
-    } on AuthenticationException catch (e) {
-      // Convertir excepciones de infraestructura a dominio
-      throw Exception('Error de autenticación: ${e.message}');
-    } on DioException catch (e) {
-      // Manejar errores específicos de Dio
-      if (e.error is AuthenticationException) {
-        throw Exception('Error de autenticación: ${e.error}');
-      }
-      throw Exception('Error de conexión: ${e.message}');
     } catch (e) {
-      throw Exception('Error inesperado: $e');
+      print('❌ AuthRepository: Error en login: $e');
+      // Los errores ya vienen procesados del DataSource
+      rethrow;
     }
   }
 
@@ -67,7 +64,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Intentar logout en el servidor (si falla no importa)
       try {
-        await _authService.logout();
+        await _authDataSource.logout();
         print('✅ Logout del servidor exitoso');
       } catch (e) {
         print('⚠️ Error en logout del servidor (continuando): $e');
@@ -115,7 +112,7 @@ class AuthRepositoryImpl implements AuthRepository {
         throw Exception('No hay refresh token disponible');
       }
 
-      final response = await _authService.refreshToken({
+      final response = await _authDataSource.refreshToken({
         'refresh_token': refreshTokenValue,
       });
 
@@ -132,12 +129,12 @@ class AuthRepositoryImpl implements AuthRepository {
         expiresAt: authResult.expiresAt,
       );
 
-      print('✅ Token renovado exitosamente');
+      print('✅ AuthRepository: Token renovado exitosamente');
       return authResult;
-    } on AuthenticationException catch (e) {
-      throw Exception('Error renovando token: ${e.message}');
     } catch (e) {
-      throw Exception('Error inesperado renovando token: $e');
+      print('❌ AuthRepository: Error renovando token: $e');
+      // Los errores ya vienen procesados del DataSource
+      rethrow;
     }
   }
 

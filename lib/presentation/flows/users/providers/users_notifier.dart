@@ -3,6 +3,8 @@ import 'package:chat/presentation/flows/users/models/state.dart';
 import 'package:chat/presentation/flows/users/models/action.dart';
 import 'package:chat/domain/entities/user.dart';
 import 'package:chat/infrastructure/repositories/auth_repository_impl.dart';
+
+import 'package:chat/data/datasources/auth/auth_remote_datasource.dart';
 import 'package:chat/infrastructure/services/auth_service.dart';
 import 'package:chat/infrastructure/storage/secure_storage.dart';
 import 'package:dio/dio.dart';
@@ -30,10 +32,11 @@ class UsersNotifier extends BaseStateNotifier<UsersState, UsersAction> {
       },
     ));
 
+    // Crear auth repository usando DataSource abstraction
     final authService = AuthService(dio);
+    final authDataSource = AuthRemoteDataSource(authService);
     final secureStorage = SecureStorage();
-
-    _authRepository = AuthRepositoryImpl(authService, secureStorage);
+    _authRepository = AuthRepositoryImpl(authDataSource, secureStorage);
   }
 
   @override

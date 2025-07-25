@@ -6,7 +6,7 @@ import 'package:chat/presentation/flows/users/models/action.dart';
 
 /// Provider del flujo de usuarios.
 final usersProvider = BaseProvider<UsersNotifier, UsersState, UsersAction>(
-  (ref) => UsersNotifier(),
+  (ref) => UsersNotifier(ref),
 );
 
 /// Extension methods para facilitar el uso del provider.

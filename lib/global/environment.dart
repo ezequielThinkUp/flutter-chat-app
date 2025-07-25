@@ -2,7 +2,8 @@ import 'dart:io';
 
 /// Configuración de entorno para la aplicación.
 class Environment {
-  /// URL base de la API según la plataforma.
+  /// URL base de la API
+  /// URL del servidor Socket.IO según la plataforma.
   static String get apiUrl {
     if (Platform.isAndroid) {
       // Android Emulator: 10.0.2.2 mapea a localhost de la máquina host
@@ -13,6 +14,20 @@ class Environment {
     } else {
       // Otras plataformas (Web, Desktop)
       return 'http://localhost:3000/api';
+    }
+  }
+
+  /// URL del servidor Socket.IO según la plataforma.
+  static String get socketUrl {
+    if (Platform.isAndroid) {
+      // Android Emulator: 10.0.2.2 mapea a localhost de la máquina host
+      return 'http://10.0.2.2:3000';
+    } else if (Platform.isIOS) {
+      // iOS Simulator: localhost funciona directamente
+      return 'http://localhost:3000';
+    } else {
+      // Otras plataformas (Web, Desktop)
+      return 'http://localhost:3000';
     }
   }
 

@@ -38,6 +38,8 @@ dependencies:
   # Secure storage for JWT
   flutter_secure_storage: ^9.0.0
   jwt_decoder: ^2.0.1
+  # Socket.IO client for real-time communication
+  socket_io_client: ^2.0.3+1
 
 dev_dependencies:
   flutter_test:

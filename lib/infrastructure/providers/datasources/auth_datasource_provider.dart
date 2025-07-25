@@ -1,12 +1,13 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:chat/data/datasources/auth/auth_datasource.dart';
-import 'package:chat/data/datasources/auth/auth_remote_datasource.dart';
+import 'package:chat/domain/datasources/auth_datasource.dart';
+import 'package:chat/infrastructure/datasources/auth_remote_datasource.dart';
 import 'package:chat/infrastructure/services/auth_service.dart';
 
 /// Provider para el DataSource de autenticación.
 ///
-/// Inyecta la implementación remota que se comunica con la API.
-/// Siguiendo Clean Architecture: Repository → DataSource → API Service
+/// Configuración de DI para AuthDataSource.
+/// Ubicado en infrastructure/providers/datasources/ para separar
+/// la configuración de DI de las implementaciones.
 final authDataSourceProvider = Provider<AuthDataSource>(
   (ref) {
     final authService = ref.watch(authServiceProvider);

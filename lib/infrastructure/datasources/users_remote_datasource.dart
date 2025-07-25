@@ -1,4 +1,4 @@
-import 'package:chat/data/datasources/users/users_datasource.dart';
+import 'package:chat/domain/datasources/users_datasource.dart';
 import 'package:chat/domain/entities/user.dart';
 
 /// Implementación remota del DataSource de usuarios.

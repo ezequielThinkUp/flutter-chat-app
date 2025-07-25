@@ -2,7 +2,7 @@
 import 'package:chat/domain/entities/auth_result.dart';
 import 'package:chat/domain/entities/user.dart';
 import 'package:chat/domain/repositories/auth_repository.dart';
-import 'package:chat/data/datasources/auth/auth_datasource.dart';
+import 'package:chat/domain/datasources/auth_datasource.dart';
 import 'package:chat/infrastructure/storage/secure_storage.dart';
 import 'package:chat/infrastructure/utils/jwt_utils.dart';
 

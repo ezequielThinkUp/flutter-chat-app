@@ -1,4 +1,4 @@
-import 'package:chat/data/datasources/auth/auth_datasource.dart';
+import 'package:chat/domain/datasources/auth_datasource.dart';
 import 'package:chat/infrastructure/models/auth_response_model.dart';
 import 'package:chat/infrastructure/services/auth_service.dart';
 

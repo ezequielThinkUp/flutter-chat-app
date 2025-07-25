@@ -4,6 +4,7 @@ import 'package:chat/presentation/flows/login/nav/login_route.dart';
 import 'package:chat/presentation/flows/register/nav/register_route.dart';
 import 'package:chat/presentation/flows/users/nav/users_route.dart';
 import 'package:chat/presentation/flows/chat/nav/chat_route.dart';
+import 'package:chat/presentation/flows/socket_test/nav/socket_test_route.dart';
 
 /// Configuración moderna de rutas usando go_router.
 ///
@@ -16,6 +17,7 @@ final GoRouter appRouter = GoRouter(
     RegisterRouter.getRoute(),
     UsersRouter.getRoute(),
     ChatRouter.getRoute(),
+    SocketTestRouter.getRoute(),
   ],
 
   // Manejo de errores de navegación
@@ -56,6 +58,7 @@ abstract class AppRoutes {
   static const String register = RegisterRouter.registerRouteName;
   static const String users = UsersRouter.usersRouteName;
   static const String chat = ChatRouter.chatRouteName;
+  static const String socketTest = SocketTestRouter.socketTestRouteName;
 }
 
 /// Extensiones de conveniencia para navegación.
@@ -88,4 +91,10 @@ extension AppNavigationX on BuildContext {
 
   /// Reemplaza la pantalla actual con usuarios.
   void replaceWithUsers() => pushReplacementNamed(UsersRouter.usersRouteName);
+
+  /// Navega a la pantalla de prueba de Socket.IO.
+  void goToSocketTest() => goNamed(SocketTestRouter.socketTestRouteName);
+
+  /// Abre la pantalla de prueba de Socket.IO como modal.
+  void pushSocketTest() => pushNamed(SocketTestRouter.socketTestRouteName);
 }

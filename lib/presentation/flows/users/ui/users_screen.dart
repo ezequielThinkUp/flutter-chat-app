@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+
 import 'package:chat/presentation/base/base_stateful_widget.dart';
 import 'package:chat/presentation/base/content_state/content_state_widget.dart';
 import 'package:chat/presentation/flows/users/providers/users_provider.dart';
@@ -81,6 +81,12 @@ class _UsersScreenState extends BaseStatefulWidget<UsersScreen> {
         elevation: 1,
         centerTitle: true,
         actions: [
+          // Botón para prueba de Socket.IO
+          IconButton(
+            icon: const Icon(Icons.wifi_tethering, color: Colors.blue),
+            tooltip: 'Probar Socket.IO',
+            onPressed: () => context.goToSocketTest(),
+          ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.black54),
             onPressed: () => _showUserMenu(context),

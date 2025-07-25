@@ -35,6 +35,15 @@ class _LoginScreenState extends BaseStatefulWidget<LoginScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xffF2F2F2),
+      // FAB para acceso rápido a Socket test (solo en desarrollo)
+      floatingActionButton: FloatingActionButton(
+        mini: true,
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        tooltip: 'Probar Socket.IO',
+        onPressed: () => context.goToSocketTest(),
+        child: const Icon(Icons.wifi_tethering),
+      ),
       body: ContentStateWidget(
         isLoading: state.isLoading,
         errorMessage:

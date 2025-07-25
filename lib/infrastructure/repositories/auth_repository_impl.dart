@@ -63,9 +63,12 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> logout() async {
     try {
+      print('🚪 Iniciando proceso de logout...');
+
       // Intentar logout en el servidor (si falla no importa)
       try {
         await _authService.logout();
+        print('✅ Logout del servidor exitoso');
       } catch (e) {
         print('⚠️ Error en logout del servidor (continuando): $e');
       }
@@ -73,9 +76,18 @@ class AuthRepositoryImpl implements AuthRepository {
       // Limpiar memoria
       _cachedToken = null;
       _cachedUser = null;
+      print('🧹 Memoria limpiada');
 
       // Limpiar secure storage
       await _secureStorage.clearAuthData();
+      print('🔐 Storage seguro limpiado');
+
+      // Verificar que la limpieza fue completa
+      final hasStoredSession = await _secureStorage.hasStoredSession();
+      if (hasStoredSession) {
+        print('⚠️ Advertencia: Aún hay datos en storage, forzando limpieza...');
+        await _secureStorage.clearAuthData(); // Segundo intento
+      }
 
       print('✅ Logout completado y sesión limpiada');
     } catch (e) {
@@ -83,6 +95,9 @@ class AuthRepositoryImpl implements AuthRepository {
       // Forzar limpieza de memoria aunque falle el storage
       _cachedToken = null;
       _cachedUser = null;
+
+      // Re-lanzar el error para que el notifier pueda manejarlo
+      rethrow;
     }
   }
 

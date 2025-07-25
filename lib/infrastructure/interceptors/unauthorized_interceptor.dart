@@ -40,6 +40,20 @@ class UnauthorizedInterceptor extends Interceptor {
       // Limpiar toda la sesión de autenticación
       await _authRepository.logout();
 
+      // Verificar que la limpieza fue exitosa
+      try {
+        final currentUser = await _authRepository.getCurrentUser();
+        if (currentUser != null) {
+          print('⚠️ Usuario aún existe después de logout automático');
+          // Intentar limpieza adicional
+          await _authRepository.logout();
+        } else {
+          print('✅ Limpieza automática verificada - usuario eliminado');
+        }
+      } catch (e) {
+        print('⚠️ Error verificando limpieza automática: $e');
+      }
+
       // Log del tipo de error según la ruta
       if (path.contains('refresh')) {
         print('⚠️ Sesión expirada durante renovación de token');

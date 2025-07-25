@@ -62,7 +62,13 @@ class _LoginScreenState extends BaseStatefulWidget<LoginScreen> {
   @override
   void onInitState() {
     super.onInitState();
-    ref.executeLoginAction(const ClearForm());
+
+    // Usar WidgetsBinding para ejecutar después del build cycle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.executeLoginAction(const ClearForm());
+      }
+    });
   }
 }
 

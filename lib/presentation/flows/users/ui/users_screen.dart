@@ -34,7 +34,37 @@ class _UsersScreenState extends BaseStatefulWidget<UsersScreen> {
         Future.microtask(() {
           if (mounted) {
             print('📱 Ejecutando navegación al login');
-            context.goToLogin();
+
+            // Navegar y limpiar stack completo
+            try {
+              context.goToLogin();
+              print('✅ Navegación al login exitosa');
+            } catch (e) {
+              print('❌ Error en navegación: $e');
+              // Fallback: usar pushReplacement
+              context.replaceWithLogin();
+            }
+          } else {
+            print('⚠️ Widget no montado, navegación cancelada');
+          }
+        });
+      }
+
+      // Manejar errores de logout
+      if ((next.message ?? '').startsWith('Error al cerrar sesión') &&
+          (previous?.message ?? '') != (next.message ?? '')) {
+        print('❌ Error detectado en logout: ${next.message}');
+
+        // Mostrar dialog de error si es necesario
+        Future.microtask(() {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(next.message ?? 'Error desconocido'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
           }
         });
       }

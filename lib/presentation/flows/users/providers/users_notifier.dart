@@ -148,16 +148,31 @@ class UsersNotifier extends BaseStateNotifier<UsersState, UsersAction> {
       // Limpiar datos de sesión usando el repositorio real
       await _authRepository.logout();
 
+      // Verificar que la limpieza fue exitosa
+      final currentUser = await _authRepository.getCurrentUser();
+      if (currentUser != null) {
+        throw Exception('Error: La sesión no se limpió correctamente');
+      }
+
       updateState((state) => state.copyWith(
             isLoading: false,
             message: 'Sesión cerrada exitosamente',
           ));
 
-      print('✅ Logout completado');
+      print('✅ Logout completado y verificado');
 
       // La navegación se manejará desde la UI
     } catch (e) {
       print('❌ Error en logout: $e');
+
+      // Intentar limpieza forzada en caso de error
+      try {
+        await _authRepository.logout(); // Segundo intento
+        print('⚠️ Limpieza forzada ejecutada');
+      } catch (forceError) {
+        print('❌ Error en limpieza forzada: $forceError');
+      }
+
       updateState((state) => state.copyWith(
             isLoading: false,
             message: 'Error al cerrar sesión: $e',

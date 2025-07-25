@@ -1,0 +1,84 @@
+# 🧩 Regla – Widgets de Presentation
+
+**Aplica a:**
+- `lib/presentation/shared/widgets/**/*.dart` - Widgets reutilizables compartidos
+- `lib/presentation/widgets/**/*.dart` - Widgets específicos de flujos
+
+Esta regla aplica a **todos los widgets dentro de la capa `presentation`**, tanto los **reutilizables compartidos** como los **específicos de un flujo**.
+
+## 🧩 Regla – Widgets Reutilizables
+
+Los widgets ubicados en `lib/presentation/shared/widgets/` son componentes UI genéricos, reutilizables en múltiples pantallas. Su propósito es simplificar la UI y mantenerla desacoplada de la lógica de negocio.
+
+---
+
+## ✅ Convenciones
+
+- Extender por defecto `BaseHookWidget`, que ya implementa `HookConsumerWidget` de forma uniforme.
+- El widget base `BaseHookWidget` ya está creado en:  
+  `lib/presentation/core/base_hook_widget.dart`
+- Si requiere estado local visual (ej: animaciones, focus, controladores), puede usar `HookWidget` o `StatefulHookWidget`.
+- Todos los datos necesarios deben recibirse por parámetros (`final`, `required`).
+- El widget debe ser totalmente **reutilizable**: sin referencias a flows ni lógica de negocio.
+
+---
+
+## 🧱 Clase base para widgets: `BaseHookWidget`
+
+```dart
+abstract class BaseHookWidget extends HookConsumerWidget {
+  BaseHookWidget({
+    super.key,
+  });
+
+  Widget buildView(BuildContext context, WidgetRef ref);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return buildView(context, ref);
+  }
+}
+```
+
+## 🧩 Ejemplo de widget reutilizable
+
+```dart
+class PrimaryButton extends BaseHookWidget {
+  final String label;
+  final VoidCallback onPressed;
+  final bool enabled;
+
+  const PrimaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.enabled = true,
+  });
+
+  @override
+  Widget buildView(BuildContext context, WidgetRef ref) {
+    return ElevatedButton(
+      onPressed: enabled ? onPressed : null,
+      child: Text(label),
+    );
+  }
+}
+```
+
+## 🧠 Buenas prácticas de diseño
+
+- Los widgets deben ser **lo más pequeños y enfocados posible**.
+- Cada widget debe encargarse de **una sola parte del layout o comportamiento visual**.
+- **Es preferible crear muchos widgets con poco código** antes que dejar lógica y estructura compleja dentro de la pantalla principal.
+- Esta práctica mejora la legibilidad, el testing y el mantenimiento a largo plazo.
+- En una `Screen`, el `buildView()` debe verse como una composición de widgets abstraídos, no como un bloque gigante de UI.
+
+## ⚠️ Evitar
+
+❌ Acceder a `ref.read()` o `ref.watch()` para obtener lógica de negocio.
+
+❌ Colocar lógica relacionada a use_cases, managers, o ApiServices.
+
+❌ Acoplar el widget a un flujo específico (deben poder usarse globalmente).
+
+❌ Usar lógica condicional compleja en el `build()` que debería resolverse en el notifier. 

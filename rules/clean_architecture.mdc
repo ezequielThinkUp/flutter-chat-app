@@ -1,0 +1,347 @@
+# 🏗️ Reglas de Arquitectura Limpia - Chat App
+
+## 📋 Flujo de Arquitectura
+
+```
+UI
+├── Provider
+│   ├── State
+│   └── Action
+│       ↓
+│   (opcional) Manager
+│       ↓
+├── UseCase
+│   ↓
+├── Repository → RepositoryImpl
+│   ↓
+├── DataSource → DataSourceImpl
+│   ↓
+└── Servicio
+```
+
+---
+
+## 🎯 **1. REGLAS DE LA CAPA UI (Presentation)**
+
+### ✅ **Permitido:**
+- Extender `BaseHookWidget` para widgets
+- Extender `BaseStatefulWidget` para pantallas
+- Usar `ContentStateWidget` para manejo de estados
+- Acceder solo al **Provider** (nunca saltar capas)
+- Importar solo de `presentation/` y `routes/`
+
+### ❌ **Prohibido:**
+- Lógica de negocio en widgets
+- Acceso directo a Repository/DataSource/Servicio
+- Importar de `domain/` o `data/` directamente
+- Estado mutable fuera del Provider
+
+### 📁 **Estructura Obligatoria:**
+```
+lib/presentation/flows/[feature]/
+├── state.dart              # Estado inmutable
+├── action.dart             # Acciones sealed
+├── [feature]_notifier.dart # Lógica de negocio
+├── [feature]_provider.dart # Provider + extensiones
+├── [feature]_screen.dart   # Pantalla principal
+└── widgets/                # Widgets específicos
+```
+
+---
+
+## 🔄 **2. REGLAS DEL PROVIDER**
+
+### ✅ **Responsabilidades:**
+- Encapsular `StateNotifier` con `BaseProvider`
+- Proporcionar extensiones de conveniencia
+- Manejar el estado inmutable
+- Exponer acciones tipo-seguras
+
+### ❌ **Prohibiciones:**
+- Lógica de negocio compleja
+- Acceso directo a servicios externos
+- Estado mutable
+- Side effects no controlados
+
+### 📝 **Ejemplo de Implementación:**
+```dart
+final chatProvider = BaseProvider<ChatNotifier, ChatState, ChatAction>(
+  (ref) => ChatNotifier(),
+);
+
+extension ChatProviderX on WidgetRef {
+  ChatState get chatState => watch(chatProvider.provider);
+  void executeChatAction(ChatAction action) => /* ... */;
+}
+```
+
+---
+
+## 📦 **3. REGLAS DEL STATE**
+
+### ✅ **Características Obligatorias:**
+- Extender `BaseState`
+- Ser completamente inmutable
+- Implementar `copyWith()`
+- Usar `BaseStatus` para estados de carga
+- Incluir helpers para UI
+
+### 📝 **Plantilla Obligatoria:**
+```dart
+class FeatureState extends BaseState {
+  // Propiedades inmutables
+  final String data;
+  final bool isLoading;
+  
+  const FeatureState({
+    super.status = BaseStatus.initial,
+    super.message,
+    this.data = '',
+    this.isLoading = false,
+  });
+  
+  @override
+  FeatureState copyWith({/* parámetros */}) => /* implementación */;
+  
+  // Helpers para UI
+  bool get canSubmit => /* lógica */;
+}
+```
+
+---
+
+## ⚡ **4. REGLAS DE ACTIONS**
+
+### ✅ **Características Obligatorias:**
+- Usar `sealed class` que extiende `BaseAction`
+- Una acción por operación específica
+- Ser inmutables y con `const` constructors
+- Incluir solo datos necesarios
+
+### 📝 **Plantilla Obligatoria:**
+```dart
+sealed class FeatureAction extends BaseAction {
+  const FeatureAction();
+}
+
+class LoadData extends FeatureAction {
+  const LoadData();
+  List<Object?> get props => [];
+}
+
+class UpdateField extends FeatureAction {
+  final String value;
+  const UpdateField(this.value);
+  List<Object?> get props => [value];
+}
+```
+
+---
+
+## 🧠 **5. REGLAS DEL NOTIFIER (Manager)**
+
+### ✅ **Responsabilidades:**
+- Extender `BaseStateNotifier<State, Action>`
+- Manejar todas las acciones con `handleAction()`
+- Coordinar UseCases (cuando se implementen)
+- Manejar estados de loading/error
+- NO lógica de negocio pesada
+
+### ❌ **Prohibiciones:**
+- Acceso directo a servicios HTTP
+- Lógica de negocio compleja
+- Mutación de estado directa
+- Side effects no controlados
+
+### 📝 **Estructura Obligatoria:**
+```dart
+class FeatureNotifier extends BaseStateNotifier<FeatureState, FeatureAction> {
+  FeatureNotifier() : super(FeatureState.initial());
+
+  @override
+  Future<void> handleAction(FeatureAction action) async {
+    switch (action) {
+      case LoadData():
+        await _handleLoadData();
+      case UpdateField():
+        _handleUpdateField(action);
+    }
+  }
+  
+  Future<void> _handleLoadData() async {
+    state = state.copyWith(status: BaseStatus.loading);
+    
+    try {
+      // Llamar UseCase aquí (cuando se implemente)
+      final result = await useCase.execute();
+      state = state.copyWith(
+        status: BaseStatus.success,
+        data: result,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        status: BaseStatus.error,
+        message: error.toString(),
+      );
+    }
+  }
+}
+```
+
+---
+
+## 🎯 **6. REGLAS DE USECASE (Próxima Implementación)**
+
+### ✅ **Cuando Implementar:**
+- Lógica de negocio compleja
+- Coordinación entre múltiples repositorios
+- Validaciones de negocio
+- Transformaciones de datos complejas
+
+### 📝 **Estructura Futura:**
+```dart
+abstract class UseCase<Type, Params> {
+  Future<Type> execute(Params params);
+}
+
+class GetMessagesUseCase extends UseCase<List<Message>, String> {
+  final MessageRepository repository;
+  
+  GetMessagesUseCase(this.repository);
+  
+  @override
+  Future<List<Message>> execute(String chatId) async {
+    final messages = await repository.getMessages(chatId);
+    // Lógica de negocio aquí
+    return messages.where((m) => m.isVisible).toList();
+  }
+}
+```
+
+---
+
+## 🗄️ **7. REGLAS DE REPOSITORY (Próxima Implementación)**
+
+### ✅ **Responsabilidades:**
+- Abstraer fuentes de datos
+- Manejar caché local
+- Coordinar múltiples DataSources
+- Transformar entre domain y data models
+
+### 📁 **Estructura Futura:**
+```
+lib/domain/repositories/
+└── message_repository.dart        # Abstract interface
+
+lib/data/repositories/
+└── message_repository_impl.dart   # Concrete implementation
+```
+
+---
+
+## 📡 **8. REGLAS DE DATASOURCE (Próxima Implementación)**
+
+### ✅ **Responsabilidades:**
+- Acceso directo a APIs/DB
+- Serialización/Deserialización
+- Manejo de errores de red
+- Caché de primer nivel
+
+### 📁 **Estructura Futura:**
+```
+lib/data/datasources/
+├── message_remote_datasource.dart  # API calls
+└── message_local_datasource.dart   # Local storage
+```
+
+---
+
+## 🌐 **9. REGLAS DE SERVICIO (Base)**
+
+### ✅ **Servicios Permitidos:**
+- HTTP client (dio, http)
+- Database (sqlite, hive)
+- Socket connections
+- Platform services
+
+### ❌ **Prohibiciones:**
+- Lógica de negocio
+- Transformaciones complejas
+- Estado de aplicación
+
+---
+
+## 🚫 **10. REGLAS DE DEPENDENCIAS**
+
+### ✅ **Flujo de Dependencias Permitido:**
+```
+UI → Provider → State/Action → Notifier → UseCase → Repository → DataSource → Service
+```
+
+### ❌ **Dependencias Prohibidas:**
+- ❌ UI → Repository (saltar Provider)
+- ❌ Notifier → Service (saltar UseCase/Repository)
+- ❌ Repository → UI (dependencia inversa)
+- ❌ Circular dependencies
+
+---
+
+## 📋 **11. CHECKLIST ANTES DE COMMIT**
+
+### ✅ **Validación Obligatoria:**
+- [ ] Todas las clases usan las bases correctas
+- [ ] No hay dependencias prohibidas
+- [ ] Estados son inmutables
+- [ ] Acciones son sealed classes
+- [ ] Notifiers manejan errores
+- [ ] Tests están actualizados
+- [ ] Documentación está completa
+
+### 🔍 **Comandos de Validación:**
+```bash
+# Análisis de código
+flutter analyze --no-fatal-infos
+
+# Tests (cuando se implementen)
+flutter test
+
+# Cobertura (cuando se implemente)
+flutter test --coverage
+```
+
+---
+
+## 🎯 **12. MIGRACIÓN GRADUAL**
+
+### **Fase Actual: ✅ COMPLETADA**
+- [x] Base classes implementadas
+- [x] Flows con Provider/State/Action/Notifier
+- [x] Navegación con go_router
+- [x] Widgets compartidos
+
+### **Próximas Fases:**
+- [ ] **Fase 2:** Implementar UseCases
+- [ ] **Fase 3:** Implementar Repositories
+- [ ] **Fase 4:** Implementar DataSources
+- [ ] **Fase 5:** Implementar Services reales
+
+---
+
+## 🛡️ **13. ENFORCEMENT**
+
+### **Herramientas de Validación:**
+- `flutter analyze` para validación estática
+- Custom lints (futuro)
+- Pre-commit hooks (futuro)
+- Code review checklist
+
+### **Responsabilidades del Equipo:**
+- **Senior Dev:** Review arquitectura
+- **Mid Dev:** Seguir reglas establecidas  
+- **Junior Dev:** Aprender y aplicar patterns
+
+---
+
+**🎯 Objetivo:** Mantener codebase limpio, escalable y mantenible siguiendo clean architecture principles.
+
+**📚 Referencia:** Este documento debe ser consultado antes de crear nuevos flows o modificar existentes. 

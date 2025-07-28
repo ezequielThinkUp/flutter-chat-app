@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:chat/global/environment.dart';
 import 'package:chat/infrastructure/interceptors/auth_interceptor.dart';
-import 'package:chat/infrastructure/providers/repositories/auth_repository_provider.dart';
+import 'package:chat/infrastructure/storage/secure_storage.dart';
 
 /// Provider para la instancia de Dio configurada.
 ///
@@ -74,8 +74,8 @@ final dioWithAuthProvider = Provider<Dio>((ref) {
   );
 
   // Interceptor de autenticación JWT
-  final authRepository = ref.watch(authRepositoryProvider);
-  dio.interceptors.add(AuthInterceptor(authRepository));
+  final secureStorage = SecureStorage();
+  dio.interceptors.add(AuthInterceptor(secureStorage));
 
   // Interceptor básico para manejo de errores de autenticación
   dio.interceptors.add(AuthErrorInterceptor());

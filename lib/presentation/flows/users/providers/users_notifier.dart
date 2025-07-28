@@ -8,6 +8,7 @@ import 'package:chat/infrastructure/providers/repositories/auth_repository_provi
 import 'package:chat/infrastructure/providers/socket/socket_connection_provider.dart';
 import 'package:chat/infrastructure/providers/datasources/users_datasource_provider.dart';
 import 'package:chat/infrastructure/datasources/users_datasource.dart';
+import 'package:chat/infrastructure/storage/secure_storage.dart';
 
 /// Notifier que maneja el estado y las acciones del flujo de usuarios.
 ///
@@ -96,6 +97,26 @@ class UsersNotifier extends BaseStateNotifier<UsersState, UsersAction> {
   Future<void> _loadUsers() async {
     try {
       print('👥 UsersNotifier: Cargando usuarios desde API...');
+
+      // Verificar token antes de hacer la petición
+      final token = await _authRepository.getCurrentToken();
+      if (token != null) {
+        print('🔐 Token disponible: ${token.substring(0, 20)}...');
+      } else {
+        print('❌ No hay token disponible');
+        state = state.copyWith(
+          isLoading: false,
+          message: 'No hay token de autenticación disponible',
+        );
+        return;
+      }
+
+      // Verificar token directamente desde SecureStorage
+      final secureStorage = SecureStorage();
+      final directToken = await secureStorage.getToken();
+      print(
+          '🔐 Token directo desde SecureStorage: ${directToken?.substring(0, 20) ?? 'null'}...');
+
       state = state.copyWith(isLoading: true);
 
       // Obtener usuarios reales de la API

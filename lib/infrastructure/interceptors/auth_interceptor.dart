@@ -1,25 +1,33 @@
 import 'package:dio/dio.dart';
 import 'package:chat/infrastructure/utils/jwt_utils.dart';
-import 'package:chat/domain/repositories/auth_repository.dart';
+import 'package:chat/infrastructure/storage/secure_storage.dart';
 
 /// Interceptor que maneja operaciones relacionadas con autenticación.
 ///
 /// Verifica la validez del token antes de enviar requests y
 /// maneja responses relacionados con autenticación.
 class AuthInterceptor extends Interceptor {
-  final AuthRepository _authRepository;
+  final SecureStorage _secureStorage;
 
-  AuthInterceptor(this._authRepository);
+  AuthInterceptor(this._secureStorage);
 
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
+    print('🚀 AuthInterceptor: INTERCEPTOR EJECUTÁNDOSE para ${options.path}');
+
     try {
+      print('🔍 AuthInterceptor: Procesando request a ${options.path}');
+
       // Solo verificar token para rutas que no sean de autenticación
       if (_requiresAuth(options.path)) {
-        final token = await _authRepository.getCurrentToken();
+        print('🔐 AuthInterceptor: Ruta requiere autenticación');
+        final token = await _secureStorage.getToken();
 
         if (token != null) {
+          print(
+              '🔐 AuthInterceptor: Token encontrado: ${token.substring(0, 20)}...');
+
           // Verificar si el token está expirado
           if (JwtUtils.isTokenExpired(token)) {
             print('⚠️ Token expirado, intentando refresh...');
@@ -43,23 +51,30 @@ class AuthInterceptor extends Interceptor {
           // Verificar si el token expira pronto (en los próximos 5 minutos)
           if (JwtUtils.expiresInMinutes(token, 5)) {
             print('⏰ Token expira pronto, renovando preventivamente...');
-            _tryRefreshToken(); // Intentar sin bloquear el request
+            await _tryRefreshToken(); // Intentar sin bloquear el request
           }
 
           // Obtener el token actualizado después del refresh
-          final currentToken = await _authRepository.getCurrentToken();
+          final currentToken = await _secureStorage.getToken();
           if (currentToken != null) {
-            // Agregar el token al header Authorization
-            options.headers['Authorization'] = 'Bearer $currentToken';
+            // Agregar el token al header x-token (formato esperado por el backend)
+            options.headers['x-token'] = currentToken;
             print(
-                '🔐 Token agregado al header: ${currentToken.substring(0, 20)}...');
+                '🔐 Token agregado al header x-token: ${currentToken.substring(0, 20)}...');
           }
+        } else {
+          print(
+              '❌ AuthInterceptor: No hay token disponible para la ruta: ${options.path}');
         }
+      } else {
+        print(
+            '🔓 AuthInterceptor: Ruta no requiere autenticación: ${options.path}');
       }
     } catch (e) {
       print('❌ Error en AuthInterceptor onRequest: $e');
     }
 
+    print('🔍 AuthInterceptor: Headers finales: ${options.headers}');
     handler.next(options);
   }
 
@@ -107,21 +122,11 @@ class AuthInterceptor extends Interceptor {
   /// Intenta renovar el token usando refresh token.
   Future<bool> _tryRefreshToken() async {
     try {
-      // Intentar renovar el token
-      await _authRepository.refreshToken();
-      print('✅ Token renovado exitosamente');
-      return true;
+      // Por ahora, simplemente retornar false ya que no tenemos refresh token implementado
+      print('⚠️ Refresh token no implementado aún');
+      return false;
     } catch (e) {
       print('❌ Error renovando token: $e');
-
-      // Si falla la renovación, limpiar la sesión
-      try {
-        await _authRepository.logout();
-        print('🧹 Sesión limpiada tras fallo de renovación');
-      } catch (logoutError) {
-        print('❌ Error limpiando sesión: $logoutError');
-      }
-
       return false;
     }
   }

@@ -86,6 +86,7 @@ class SocketConnectionNotifier extends StateNotifier<SocketConnectionState> {
       );
 
       print('🔌 SocketConnectionNotifier: Conectando socket...');
+      print('🔌 Llamando a _socketRepository.connectAndAuthenticate()...');
 
       await _socketRepository.connectAndAuthenticate();
 
@@ -99,6 +100,7 @@ class SocketConnectionNotifier extends StateNotifier<SocketConnectionState> {
       print('✅ SocketConnectionNotifier: Socket conectado exitosamente');
     } catch (e) {
       print('❌ SocketConnectionNotifier: Error conectando: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
       state = state.copyWith(
         isConnecting: false,
         isConnected: false,
@@ -178,7 +180,21 @@ class SocketConnectionNotifier extends StateNotifier<SocketConnectionState> {
   /// Maneja eventos de login exitoso.
   Future<void> onLoginSuccess() async {
     print('🎉 SocketConnectionNotifier: Login detectado, conectando socket...');
-    await connectSocket();
+    print('🎉 Verificando usuario autenticado...');
+
+    try {
+      final user = await _authRepository.getCurrentUser();
+      if (user != null) {
+        print('✅ Usuario encontrado: ${user.name} (${user.id})');
+      } else {
+        print('❌ No hay usuario autenticado disponible');
+      }
+
+      await connectSocket();
+    } catch (e) {
+      print('❌ Error en onLoginSuccess: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
+    }
   }
 
   /// Maneja eventos de logout.

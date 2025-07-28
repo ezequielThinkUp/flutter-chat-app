@@ -188,7 +188,9 @@ class SocketService {
       });
 
       // Enviar datos de autenticación
+      print('🔐 SocketService: Enviando evento login con datos: $userData');
       _socket.emit('login', userData);
+      print('🔐 SocketService: Evento login enviado');
 
       return await completer.future;
     } catch (e) {

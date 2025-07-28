@@ -138,10 +138,27 @@ class LoginNotifier extends BaseStateNotifier<LoginState, LoginAction> {
         // Conectar socket después del login exitoso
         try {
           print('🔌 Conectando socket después del login exitoso...');
-          _ref!.read(socketConnectionProvider.notifier).onLoginSuccess();
-          print('✅ Socket conectado exitosamente');
+          print(
+              '🔌 Usuario logueado: ${authResult.user.name} (${authResult.user.id})');
+
+          // Verificar que tenemos la referencia
+          if (_ref != null) {
+            print('✅ Referencia al provider container disponible');
+
+            // Obtener el socket connection provider
+            final socketConnectionNotifier =
+                _ref!.read(socketConnectionProvider.notifier);
+            print('✅ SocketConnectionNotifier obtenido');
+
+            // Llamar al método de conexión
+            await socketConnectionNotifier.onLoginSuccess();
+            print('✅ Socket conectado exitosamente');
+          } else {
+            print('❌ No hay referencia al provider container');
+          }
         } catch (e) {
           print('❌ Error conectando socket: $e');
+          print('❌ Stack trace: ${StackTrace.current}');
         }
       } else {
         throw Exception('No hay referencia al provider container');

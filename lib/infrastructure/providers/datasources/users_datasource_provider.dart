@@ -10,7 +10,7 @@ import 'package:chat/infrastructure/services/auth_service.dart';
 /// la configuración de DI de las implementaciones.
 final usersDataSourceProvider = Provider<UsersDataSource>(
   (ref) {
-    final authService = ref.watch(authServiceProvider);
+    final authService = ref.watch(authServiceWithAuthProvider);
     return UsersRemoteDataSource(authService);
   },
 );

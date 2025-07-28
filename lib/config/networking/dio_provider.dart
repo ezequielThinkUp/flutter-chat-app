@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:chat/global/environment.dart';
+import 'package:chat/infrastructure/interceptors/auth_interceptor.dart';
+import 'package:chat/infrastructure/providers/repositories/auth_repository_provider.dart';
 
 /// Provider para la instancia de Dio configurada.
 ///
@@ -33,6 +35,47 @@ final dioProvider = Provider<Dio>((ref) {
       logPrint: (obj) => print('🌐 Dio: $obj'),
     ),
   );
+
+  // Interceptor básico para manejo de errores de autenticación
+  dio.interceptors.add(AuthErrorInterceptor());
+
+  return dio;
+});
+
+/// Provider para la instancia de Dio con autenticación JWT.
+///
+/// Incluye el AuthInterceptor que maneja automáticamente los tokens JWT.
+final dioWithAuthProvider = Provider<Dio>((ref) {
+  final dio = Dio();
+
+  // Configuración base
+  dio.options = BaseOptions(
+    baseUrl: Environment.apiUrl,
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+    sendTimeout: const Duration(seconds: 30),
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+  );
+
+  // Interceptor para logging
+  dio.interceptors.add(
+    LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: false,
+      responseBody: true,
+      error: true,
+      logPrint: (obj) => print('🌐 Dio: $obj'),
+    ),
+  );
+
+  // Interceptor de autenticación JWT
+  final authRepository = ref.watch(authRepositoryProvider);
+  dio.interceptors.add(AuthInterceptor(authRepository));
 
   // Interceptor básico para manejo de errores de autenticación
   dio.interceptors.add(AuthErrorInterceptor());

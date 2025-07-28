@@ -13,7 +13,7 @@ class UsersRemoteDataSource implements UsersDataSource {
     try {
       print('🌐 UsersRemoteDataSource: Obteniendo usuarios de la API...');
 
-      final response = await _authService.getUsers();
+      final response = await _authService.getUsers() as Map<String, dynamic>;
 
       if (response['ok'] == true) {
         final usersData = response['users'] as List;
@@ -49,7 +49,8 @@ class UsersRemoteDataSource implements UsersDataSource {
       print(
           '🌐 UsersRemoteDataSource: Obteniendo usuarios online de la API...');
 
-      final response = await _authService.getOnlineUsers();
+      final response =
+          await _authService.getOnlineUsers() as Map<String, dynamic>;
 
       if (response['ok'] == true) {
         final usersData = response['users'] as List;
@@ -66,8 +67,7 @@ class UsersRemoteDataSource implements UsersDataSource {
             '✅ UsersRemoteDataSource: ${users.length} usuarios online obtenidos');
         return users;
       } else {
-        throw Exception(
-            'Error en respuesta de API: ${response.data['message']}');
+        throw Exception('Error en respuesta de API: ${response['message']}');
       }
     } on DioException catch (e) {
       print('❌ UsersRemoteDataSource: Error Dio: ${e.message}');
@@ -87,7 +87,8 @@ class UsersRemoteDataSource implements UsersDataSource {
       print(
           '🌐 UsersRemoteDataSource: Obteniendo usuario $userId de la API...');
 
-      final response = await _authService.getUserById(userId);
+      final response =
+          await _authService.getUserById(userId) as Map<String, dynamic>;
 
       if (response['ok'] == true) {
         final userData = response['user'];

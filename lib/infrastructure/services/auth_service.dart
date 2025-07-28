@@ -28,20 +28,25 @@ abstract class AuthService {
 
   /// Obtiene todos los usuarios.
   @GET('/users')
-  Future<Map<String, dynamic>> getUsers();
+  Future<dynamic> getUsers();
 
   /// Obtiene usuarios online.
   @GET('/users/online')
-  Future<Map<String, dynamic>> getOnlineUsers();
+  Future<dynamic> getOnlineUsers();
 
   /// Obtiene un usuario por ID.
   @GET('/users/{id}')
-  Future<Map<String, dynamic>> getUserById(@Path('id') String userId);
+  Future<dynamic> getUserById(@Path('id') String userId);
 }
 
-/// Provider para el servicio de autenticación.
+/// Provider para el servicio de autenticación (sin autenticación para evitar dependencia circular).
 final authServiceProvider = Provider<AuthService>(
   (ref) => AuthService(ref.watch(dioProvider)),
+);
+
+/// Provider para el servicio de autenticación con JWT automático.
+final authServiceWithAuthProvider = Provider<AuthService>(
+  (ref) => AuthService(ref.watch(dioWithAuthProvider)),
 );
 
 /// Excepción específica para errores de autenticación.

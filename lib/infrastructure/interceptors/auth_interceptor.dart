@@ -45,6 +45,15 @@ class AuthInterceptor extends Interceptor {
             print('⏰ Token expira pronto, renovando preventivamente...');
             _tryRefreshToken(); // Intentar sin bloquear el request
           }
+
+          // Obtener el token actualizado después del refresh
+          final currentToken = await _authRepository.getCurrentToken();
+          if (currentToken != null) {
+            // Agregar el token al header Authorization
+            options.headers['Authorization'] = 'Bearer $currentToken';
+            print(
+                '🔐 Token agregado al header: ${currentToken.substring(0, 20)}...');
+          }
         }
       }
     } catch (e) {

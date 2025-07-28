@@ -23,9 +23,8 @@ class AuthResponseModel {
     return AuthResponseModel(
       ok: json['ok'] as bool? ?? false,
       token: json['token'] as String? ?? '',
-      usuario:
-          UserModel.fromJson(json['usuario'] as Map<String, dynamic>? ?? {}),
-      mensaje: json['mensaje'] as String?,
+      usuario: UserModel.fromJson(json['user'] as Map<String, dynamic>? ?? {}),
+      mensaje: json['msg'] as String?,
     );
   }
 
@@ -73,8 +72,8 @@ class UserModel {
   /// Crea desde JSON manualmente.
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      uid: json['uid'] as String? ?? '',
-      nombre: json['nombre'] as String? ?? '',
+      uid: json['id'] as String? ?? '',
+      nombre: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       online: json['online'] as bool? ?? false,
     );

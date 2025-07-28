@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:chat/presentation/core/base_hook_widget.dart';
 import 'package:go_router/go_router.dart';
+import 'package:chat/routes/app_router.dart';
 
 /// AppBar personalizada para el chat.
 ///
@@ -31,7 +32,10 @@ class ChatAppBar extends BaseHookWidget implements PreferredSizeWidget {
       centerTitle: true,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black87),
-        onPressed: () => context.pop(),
+        onPressed: () {
+          print('🔙 Botón de retroceso presionado - navegando a usuarios');
+          context.goToUsers();
+        },
       ),
       title: Column(
         children: [

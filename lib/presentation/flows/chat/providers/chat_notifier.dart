@@ -49,12 +49,12 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
           recipientUserId: action.recipientUserId,
           recipientUserName: action.recipientUserName,
           recipientAvatar: action.recipientAvatar,
-          messages: [], // Limpiar mensajes anteriores
+          messages: [], // Chat vacío inicialmente
           currentText: '',
         ));
 
-    // Cargar mensajes del chat
-    await _handleLoadMessages();
+    // TODO: Cargar mensajes reales del servidor cuando esté implementado
+    // await _handleLoadMessages();
   }
 
   /// Actualiza el texto del input.

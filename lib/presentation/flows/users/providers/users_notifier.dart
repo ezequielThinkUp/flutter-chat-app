@@ -3,9 +3,11 @@ import 'package:chat/presentation/base/base_state_notifier.dart';
 import 'package:chat/presentation/flows/users/models/state.dart';
 import 'package:chat/presentation/flows/users/models/action.dart';
 import 'package:chat/domain/repositories/auth_repository.dart';
-import 'package:chat/domain/entities/user.dart';
+
 import 'package:chat/infrastructure/providers/repositories/auth_repository_provider.dart';
 import 'package:chat/infrastructure/providers/socket/socket_connection_provider.dart';
+import 'package:chat/infrastructure/providers/datasources/users_datasource_provider.dart';
+import 'package:chat/infrastructure/datasources/users_datasource.dart';
 
 /// Notifier que maneja el estado y las acciones del flujo de usuarios.
 ///
@@ -15,6 +17,7 @@ class UsersNotifier extends BaseStateNotifier<UsersState, UsersAction> {
   // Dependencias inyectadas
   final Ref _ref;
   late AuthRepository _authRepository;
+  late UsersDataSource _usersDataSource;
 
   UsersNotifier(this._ref) : super(const UsersState()) {
     _initializeDependencies();
@@ -24,6 +27,7 @@ class UsersNotifier extends BaseStateNotifier<UsersState, UsersAction> {
   /// Inicializa las dependencias del notifier.
   void _initializeDependencies() {
     _authRepository = _ref.read(authRepositoryProvider);
+    _usersDataSource = _ref.watch(usersDataSourceProvider);
     print('✅ UsersNotifier: Dependencias inicializadas');
   }
 
@@ -88,36 +92,14 @@ class UsersNotifier extends BaseStateNotifier<UsersState, UsersAction> {
     }
   }
 
-  /// Carga la lista de usuarios (mock data por ahora).
+  /// Carga la lista de usuarios reales de la API.
   Future<void> _loadUsers() async {
     try {
-      print('👥 UsersNotifier: Cargando usuarios...');
+      print('👥 UsersNotifier: Cargando usuarios desde API...');
       state = state.copyWith(isLoading: true);
 
-      // Simular delay de red
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // Mock data - en el futuro esto vendrá del Repository
-      final users = [
-        const User(
-          id: '1',
-          name: 'Fernando Herrera',
-          email: 'fernando@google.com',
-          isOnline: true,
-        ),
-        const User(
-          id: '2',
-          name: 'María García',
-          email: 'maria@google.com',
-          isOnline: false,
-        ),
-        const User(
-          id: '3',
-          name: 'Felipe Gómez',
-          email: 'felipe@tesla.com',
-          isOnline: true,
-        ),
-      ];
+      // Obtener usuarios reales de la API
+      final users = await _usersDataSource.getUsers();
 
       state = state.copyWith(
         isLoading: false,
@@ -125,7 +107,7 @@ class UsersNotifier extends BaseStateNotifier<UsersState, UsersAction> {
         message: 'Usuarios cargados exitosamente',
       );
 
-      print('✅ UsersNotifier: ${users.length} usuarios cargados');
+      print('✅ UsersNotifier: ${users.length} usuarios reales cargados');
     } catch (e) {
       print('❌ UsersNotifier: Error cargando usuarios: $e');
       state = state.copyWith(

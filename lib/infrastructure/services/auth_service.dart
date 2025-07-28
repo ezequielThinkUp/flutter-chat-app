@@ -25,6 +25,18 @@ abstract class AuthService {
   @POST('/renew')
   Future<AuthResponseModel> refreshToken(
       @Body() Map<String, dynamic> tokenData);
+
+  /// Obtiene todos los usuarios.
+  @GET('/users')
+  Future<Map<String, dynamic>> getUsers();
+
+  /// Obtiene usuarios online.
+  @GET('/users/online')
+  Future<Map<String, dynamic>> getOnlineUsers();
+
+  /// Obtiene un usuario por ID.
+  @GET('/users/{id}')
+  Future<Map<String, dynamic>> getUserById(@Path('id') String userId);
 }
 
 /// Provider para el servicio de autenticación.

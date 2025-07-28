@@ -1,101 +1,129 @@
-import 'package:chat/domain/datasources/users_datasource.dart';
+import 'package:chat/infrastructure/datasources/users_datasource.dart';
 import 'package:chat/domain/entities/user.dart';
+import 'package:chat/infrastructure/services/auth_service.dart';
+import 'package:dio/dio.dart';
 
-/// Implementación remota del DataSource de usuarios.
-///
-/// Por ahora es una implementación mock hasta que se cree el servicio real.
-/// En el futuro se comunicará con la API a través de un UsersService.
 class UsersRemoteDataSource implements UsersDataSource {
-  // TODO: Inyectar UsersService cuando esté disponible
-  // final UsersService _usersService;
+  final AuthService _authService;
 
-  const UsersRemoteDataSource();
+  const UsersRemoteDataSource(this._authService);
 
   @override
   Future<List<User>> getUsers() async {
     try {
-      print('🌐 UsersRemoteDataSource: Obteniendo usuarios...');
+      print('🌐 UsersRemoteDataSource: Obteniendo usuarios de la API...');
 
-      // TODO: Reemplazar con llamada real a la API
-      // final response = await _usersService.getUsers();
-      // return response.map((userModel) => userModel.toDomain()).toList();
+      final response = await _authService.getUsers();
 
-      // Mock data por ahora
-      await Future.delayed(const Duration(milliseconds: 500));
+      if (response['ok'] == true) {
+        final usersData = response['users'] as List;
+        final users = usersData
+            .map((userData) => User(
+                  id: userData['_id'] ?? '',
+                  name: userData['name'] ?? '',
+                  email: userData['email'] ?? '',
+                  isOnline: userData['online'] ?? false,
+                ))
+            .toList();
 
-      final mockUsers = [
-        User(
-          id: '1',
-          name: 'Juan Pérez',
-          email: 'juan@ejemplo.com',
-          isOnline: true,
-        ),
-        User(
-          id: '2',
-          name: 'María García',
-          email: 'maria@ejemplo.com',
-          isOnline: false,
-        ),
-        User(
-          id: '3',
-          name: 'Carlos López',
-          email: 'carlos@ejemplo.com',
-          isOnline: true,
-        ),
-      ];
-
-      print('✅ UsersRemoteDataSource: ${mockUsers.length} usuarios obtenidos');
-      return mockUsers;
+        print('✅ UsersRemoteDataSource: ${users.length} usuarios obtenidos');
+        return users;
+      } else {
+        throw Exception('Error en respuesta de API: ${response['message']}');
+      }
+    } on DioException catch (e) {
+      print('❌ UsersRemoteDataSource: Error Dio: ${e.message}');
+      if (e.response?.statusCode == 401) {
+        throw Exception('Token expirado o inválido');
+      }
+      throw Exception('Error de conectividad: ${e.message}');
     } catch (e) {
-      print('❌ UsersRemoteDataSource: Error obteniendo usuarios: $e');
+      print('❌ UsersRemoteDataSource: Error general: $e');
       throw Exception('Error obteniendo usuarios: $e');
+    }
+  }
+
+  @override
+  Future<List<User>> getOnlineUsers() async {
+    try {
+      print(
+          '🌐 UsersRemoteDataSource: Obteniendo usuarios online de la API...');
+
+      final response = await _authService.getOnlineUsers();
+
+      if (response['ok'] == true) {
+        final usersData = response['users'] as List;
+        final users = usersData
+            .map((userData) => User(
+                  id: userData['_id'] ?? '',
+                  name: userData['name'] ?? '',
+                  email: userData['email'] ?? '',
+                  isOnline: userData['online'] ?? false,
+                ))
+            .toList();
+
+        print(
+            '✅ UsersRemoteDataSource: ${users.length} usuarios online obtenidos');
+        return users;
+      } else {
+        throw Exception(
+            'Error en respuesta de API: ${response.data['message']}');
+      }
+    } on DioException catch (e) {
+      print('❌ UsersRemoteDataSource: Error Dio: ${e.message}');
+      if (e.response?.statusCode == 401) {
+        throw Exception('Token expirado o inválido');
+      }
+      throw Exception('Error de conectividad: ${e.message}');
+    } catch (e) {
+      print('❌ UsersRemoteDataSource: Error general: $e');
+      throw Exception('Error obteniendo usuarios online: $e');
     }
   }
 
   @override
   Future<User> getUserById(String userId) async {
     try {
-      print('🌐 UsersRemoteDataSource: Obteniendo usuario $userId...');
+      print(
+          '🌐 UsersRemoteDataSource: Obteniendo usuario $userId de la API...');
 
-      // TODO: Reemplazar con llamada real a la API
-      // final response = await _usersService.getUserById(userId);
-      // return response.toDomain();
+      final response = await _authService.getUserById(userId);
 
-      // Mock data por ahora
-      await Future.delayed(const Duration(milliseconds: 300));
+      if (response['ok'] == true) {
+        final userData = response['user'];
+        final user = User(
+          id: userData['_id'] ?? '',
+          name: userData['name'] ?? '',
+          email: userData['email'] ?? '',
+          isOnline: userData['online'] ?? false,
+        );
 
-      final mockUser = User(
-        id: userId,
-        name: 'Usuario Mock',
-        email: 'mock@ejemplo.com',
-        isOnline: true,
-      );
-
-      print('✅ UsersRemoteDataSource: Usuario $userId obtenido');
-      return mockUser;
+        print('✅ UsersRemoteDataSource: Usuario ${user.name} obtenido');
+        return user;
+      } else {
+        throw Exception('Error en respuesta de API: ${response['message']}');
+      }
+    } on DioException catch (e) {
+      print('❌ UsersRemoteDataSource: Error Dio: ${e.message}');
+      if (e.response?.statusCode == 404) {
+        throw Exception('Usuario no encontrado');
+      }
+      if (e.response?.statusCode == 401) {
+        throw Exception('Token expirado o inválido');
+      }
+      throw Exception('Error de conectividad: ${e.message}');
     } catch (e) {
-      print('❌ UsersRemoteDataSource: Error obteniendo usuario $userId: $e');
+      print('❌ UsersRemoteDataSource: Error general: $e');
       throw Exception('Error obteniendo usuario: $e');
     }
   }
 
   @override
   Future<void> updateUserOnlineStatus(String userId, bool isOnline) async {
-    try {
-      print(
-          '🌐 UsersRemoteDataSource: Actualizando estado online de $userId a $isOnline...');
-
-      // TODO: Reemplazar con llamada real a la API
-      // await _usersService.updateOnlineStatus(userId, {'isOnline': isOnline});
-
-      // Mock delay por ahora
-      await Future.delayed(const Duration(milliseconds: 200));
-
-      print('✅ UsersRemoteDataSource: Estado online de $userId actualizado');
-    } catch (e) {
-      print(
-          '❌ UsersRemoteDataSource: Error actualizando estado de $userId: $e');
-      throw Exception('Error actualizando estado online: $e');
-    }
+    // Esta funcionalidad se maneja automáticamente por Socket.IO
+    // No necesitamos implementarla aquí ya que el backend actualiza
+    // el estado online/offline automáticamente cuando los usuarios
+    // se conectan/desconectan via socket
+    print('ℹ️ Estado online se actualiza automáticamente via Socket.IO');
   }
 }

@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:chat/presentation/base/base_state_notifier.dart';
 import 'package:chat/presentation/flows/login/states/state.dart';
 import 'package:chat/presentation/flows/login/states/action.dart';
 import 'package:chat/global/environment.dart';
+import 'package:chat/infrastructure/providers/socket/socket_connection_provider.dart';
+import 'package:chat/infrastructure/providers/repositories/auth_repository_provider.dart';
 
 /// Notifier que maneja el estado y las acciones del flujo de login.
 ///
@@ -14,8 +17,16 @@ class LoginNotifier extends BaseStateNotifier<LoginState, LoginAction> {
   late final Dio _dio;
   late final FlutterSecureStorage _storage;
 
+  // Referencia al provider container para acceder a otros providers
+  Ref? _ref;
+
   LoginNotifier() : super(const LoginState()) {
     _initializeDependencies();
+  }
+
+  /// Establece la referencia al provider container.
+  void setRef(Ref ref) {
+    _ref = ref;
   }
 
   /// Inicializa las dependencias internas del notifier.
@@ -96,7 +107,7 @@ class LoginNotifier extends BaseStateNotifier<LoginState, LoginAction> {
     updateState((state) => state.copyWith(isPasswordValid: isValid));
   }
 
-  /// Procesa el login del usuario usando HTTP directo.
+  /// Procesa el login del usuario usando AuthRepository.
   Future<void> _submitLogin() async {
     if (!state.canSubmit) return;
 
@@ -108,30 +119,33 @@ class LoginNotifier extends BaseStateNotifier<LoginState, LoginAction> {
 
       print('🚀 Iniciando login para: ${state.email}');
 
-      // Código real para servidor
-      final response = await _dio.post('/auth/login', data: {
-        'email': state.email,
-        'password': state.password,
-      });
+      // Usar AuthRepository para login
+      if (_ref != null) {
+        final authRepository = _ref!.read(authRepositoryProvider);
+        final authResult = await authRepository.login(
+          email: state.email,
+          password: state.password,
+        );
 
-      print('✅ Login exitoso: ${response.data}');
+        print('✅ Login exitoso: ${authResult.user.name}');
+        print('🔑 Token guardado: ${authResult.token.substring(0, 20)}...');
 
-      // Guardar token y datos del usuario en storage
-      final token = response.data['token'];
-      final userData = response.data['user'];
+        updateState((state) => state.copyWith(
+              isLoading: false,
+              message: 'Login exitoso',
+            ));
 
-      await _storage.write(key: 'token', value: token);
-      await _storage.write(key: 'user_id', value: userData['id']);
-      await _storage.write(key: 'user_name', value: userData['name']);
-      await _storage.write(key: 'user_email', value: userData['email']);
-
-      print('🔑 Token guardado: ${token.substring(0, 20)}...');
-      print('👤 Usuario: ${userData['name']} (${userData['email']})');
-
-      updateState((state) => state.copyWith(
-            isLoading: false,
-            message: 'Login exitoso',
-          ));
+        // Conectar socket después del login exitoso
+        try {
+          print('🔌 Conectando socket después del login exitoso...');
+          _ref!.read(socketConnectionProvider.notifier).onLoginSuccess();
+          print('✅ Socket conectado exitosamente');
+        } catch (e) {
+          print('❌ Error conectando socket: $e');
+        }
+      } else {
+        throw Exception('No hay referencia al provider container');
+      }
 
       // TODO: Disparar navegación al flujo principal
       // navigateTo('/users');

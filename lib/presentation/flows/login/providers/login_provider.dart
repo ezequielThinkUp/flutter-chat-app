@@ -9,7 +9,11 @@ import 'package:chat/presentation/flows/login/states/action.dart';
 /// Utiliza BaseProvider para encapsular la creación y configuración
 /// del StateNotifierProvider con funcionalidades adicionales.
 final loginProvider = BaseProvider<LoginNotifier, LoginState, LoginAction>(
-  (ref) => LoginNotifier(),
+  (ref) {
+    final notifier = LoginNotifier();
+    notifier.setRef(ref);
+    return notifier;
+  },
 );
 
 /// Extension methods para facilitar el uso del provider.

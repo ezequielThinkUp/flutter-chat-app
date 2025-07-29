@@ -4,7 +4,7 @@ import 'package:chat/presentation/flows/chat/providers/chat_notifier.dart';
 import 'package:chat/presentation/flows/chat/states/state.dart';
 import 'package:chat/presentation/flows/chat/states/action.dart';
 import 'package:chat/infrastructure/providers/datasources/socket_datasource_provider.dart';
-import 'package:chat/infrastructure/providers/messages_repository_provider.dart';
+import 'package:chat/infrastructure/providers/messages_usecases_providers.dart';
 
 /// Provider del flujo de chat.
 ///
@@ -13,8 +13,16 @@ import 'package:chat/infrastructure/providers/messages_repository_provider.dart'
 final chatProvider = BaseProvider<ChatNotifier, ChatState, ChatAction>(
   (ref) {
     final socketDataSource = ref.watch(socketDataSourceProvider);
-    final messagesRepository = ref.watch(messagesRepositoryProvider);
-    return ChatNotifier(socketDataSource, messagesRepository);
+    final getMessagesUseCase = ref.watch(getMessagesBetweenUsersUseCaseProvider);
+    final markMessageAsReadUseCase = ref.watch(markMessageAsReadUseCaseProvider);
+    final markMessageAsDeliveredUseCase = ref.watch(markMessageAsDeliveredUseCaseProvider);
+    
+    return ChatNotifier(
+      socketDataSource,
+      getMessagesUseCase,
+      markMessageAsReadUseCase,
+      markMessageAsDeliveredUseCase,
+    );
   },
 );
 

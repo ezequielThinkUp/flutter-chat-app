@@ -5,7 +5,9 @@ import 'package:chat/domain/entities/message.dart';
 import 'package:chat/domain/datasources/socket_datasource.dart';
 import 'package:chat/domain/datasources/socket_datasource.dart'
     show SocketMessage;
-import 'package:chat/domain/repositories/messages_repository.dart';
+import 'package:chat/domain/usecases/messages/get_messages_between_users_usecase.dart';
+import 'package:chat/domain/usecases/messages/mark_message_as_read_usecase.dart';
+import 'package:chat/domain/usecases/messages/mark_message_as_delivered_usecase.dart';
 import 'package:chat/presentation/base/base_status.dart';
 
 /// Notifier del flujo de chat.
@@ -22,11 +24,17 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
   /// DataSource para comunicación con socket.
   final SocketDataSource _socketDataSource;
 
-  /// Repositorio para operaciones de mensajes.
-  final MessagesRepository _messagesRepository;
+  /// Use cases para operaciones de mensajes.
+  final GetMessagesBetweenUsersUseCase _getMessagesUseCase;
+  final MarkMessageAsReadUseCase _markMessageAsReadUseCase;
+  final MarkMessageAsDeliveredUseCase _markMessageAsDeliveredUseCase;
 
-  ChatNotifier(this._socketDataSource, this._messagesRepository)
-      : super(ChatState.initial()) {
+  ChatNotifier(
+    this._socketDataSource,
+    this._getMessagesUseCase,
+    this._markMessageAsReadUseCase,
+    this._markMessageAsDeliveredUseCase,
+  ) : super(ChatState.initial()) {
     _setupMessageListener();
   }
 
@@ -151,20 +159,17 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
       print(
           '📥 Cargando mensajes entre usuarios: $_currentUserId y ${state.recipientUserId}');
 
-      // Por ahora, vamos a usar una implementación simple
-      // que simula la carga de mensajes reales
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Cargar mensajes reales desde la API usando el use case
+      final messages = await _getMessagesUseCase.execute(
+        usuario1: _currentUserId,
+        usuario2: state.recipientUserId!,
+        limite: 50,
+      );
 
-      // TODO: Implementar carga real de mensajes desde la API
-      // final messages = await _messagesDataSource.getMessagesBetweenUsers(
-      //   usuario1: _currentUserId,
-      //   usuario2: state.recipientUserId!,
-      //   limite: 50,
-      // );
+      // Actualizar el estado con los mensajes cargados
+      updateState((state) => state.copyWith(messages: messages));
 
-      // Por ahora, mantener el chat vacío para que se llenen con mensajes reales
-      // que vienen del Socket.IO
-      print('✅ Chat inicializado - esperando mensajes en tiempo real');
+      print('✅ ${messages.length} mensajes cargados del servidor');
     } catch (e) {
       print('❌ Error cargando mensajes: $e');
       updateState((state) => state.copyWith(
@@ -233,8 +238,7 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
   /// Marca un mensaje específico como leído.
   Future<void> _handleMarkMessageAsRead(MarkMessageAsRead action) async {
     try {
-      final success =
-          await _messagesRepository.markMessageAsRead(action.messageId);
+      final success = await _markMessageAsReadUseCase.execute(action.messageId);
       if (success) {
         // Actualizar el estado del mensaje en la lista local
         final updatedMessages = state.messages.map((message) {
@@ -261,7 +265,7 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
       MarkMessageAsDelivered action) async {
     try {
       final success =
-          await _messagesRepository.markMessageAsDelivered(action.messageId);
+          await _markMessageAsDeliveredUseCase.execute(action.messageId);
       if (success) {
         // Actualizar el estado del mensaje en la lista local
         final updatedMessages = state.messages.map((message) {

@@ -7,7 +7,7 @@ import 'package:chat/config/networking/dio_provider.dart';
 
 /// Provider para el servicio de mensajes.
 final messagesServiceProvider = Provider<MessagesService>((ref) {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.watch(dioWithAuthProvider);
   return MessagesService(dio, baseUrl: Environment.apiUrl);
 });
 

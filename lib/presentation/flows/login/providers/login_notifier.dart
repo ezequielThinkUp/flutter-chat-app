@@ -170,18 +170,50 @@ class LoginNotifier extends BaseStateNotifier<LoginState, LoginAction> {
       print('❌ Error en login: $e');
 
       String errorMessage = 'Error de conexión';
+      bool shouldRedirectToLogin = false;
+
       if (e is DioException) {
-        if (e.response?.statusCode == 400) {
-          errorMessage = 'Credenciales inválidas';
-        } else if (e.response?.statusCode == 404) {
-          errorMessage = 'Usuario no encontrado';
+        switch (e.type) {
+          case DioExceptionType.connectionTimeout:
+          case DioExceptionType.receiveTimeout:
+          case DioExceptionType.sendTimeout:
+            errorMessage =
+                'Error de conexión: El servidor no responde. Verifica tu conexión a internet.';
+            shouldRedirectToLogin = true;
+            break;
+          case DioExceptionType.connectionError:
+            errorMessage =
+                'Error de conexión: No se puede conectar al servidor.';
+            shouldRedirectToLogin = true;
+            break;
+          default:
+            if (e.response?.statusCode == 400) {
+              errorMessage = 'Credenciales inválidas';
+            } else if (e.response?.statusCode == 404) {
+              errorMessage = 'Usuario no encontrado';
+            } else if (e.response?.statusCode == 500) {
+              errorMessage = 'Error del servidor. Intenta más tarde.';
+            } else {
+              errorMessage = 'Error de conexión: ${e.message}';
+            }
         }
+      } else if (e.toString().contains('connection timeout')) {
+        errorMessage =
+            'Error de conexión: El servidor no responde. Verifica tu conexión a internet.';
+        shouldRedirectToLogin = true;
       }
 
       updateState((state) => state.copyWith(
             isLoading: false,
             message: errorMessage,
+            shouldRedirectToLogin: shouldRedirectToLogin,
           ));
+
+      // Si es un error de conexión, mostrar mensaje más prominente
+      if (shouldRedirectToLogin) {
+        print('⚠️ Error de conexión detectado - Redirigiendo al login');
+        // Aquí podrías disparar una acción para mostrar un diálogo o snackbar
+      }
     }
   }
 

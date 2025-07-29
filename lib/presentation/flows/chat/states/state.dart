@@ -1,4 +1,6 @@
 import 'package:chat/domain/entities/message.dart';
+import 'package:chat/presentation/base/base_state.dart';
+import 'package:chat/presentation/base/base_status.dart';
 
 /// Estado inmutable del flujo de chat.
 ///
@@ -7,7 +9,7 @@ import 'package:chat/domain/entities/message.dart';
 /// - Estado del input de texto
 /// - Usuario activo con quien se chatea
 /// - Estado de "está escribiendo"
-class ChatState {
+class ChatState extends BaseState {
   /// Lista de mensajes del chat.
   final List<Message> messages;
 
@@ -29,9 +31,6 @@ class ChatState {
   /// Si se está enviando un mensaje.
   final bool isSendingMessage;
 
-  /// Mensaje de error o estado.
-  final String? message;
-
   const ChatState({
     this.messages = const [],
     this.currentText = '',
@@ -40,7 +39,8 @@ class ChatState {
     this.recipientAvatar,
     this.isTyping = false,
     this.isSendingMessage = false,
-    this.message,
+    super.status = BaseStatus.initial,
+    super.message,
   });
 
   /// Constructor inicial del estado.
@@ -48,6 +48,7 @@ class ChatState {
     return const ChatState();
   }
 
+  @override
   ChatState copyWith({
     List<Message>? messages,
     String? currentText,
@@ -56,6 +57,7 @@ class ChatState {
     String? recipientAvatar,
     bool? isTyping,
     bool? isSendingMessage,
+    BaseStatus? status,
     String? message,
   }) {
     return ChatState(
@@ -66,6 +68,7 @@ class ChatState {
       recipientAvatar: recipientAvatar ?? this.recipientAvatar,
       isTyping: isTyping ?? this.isTyping,
       isSendingMessage: isSendingMessage ?? this.isSendingMessage,
+      status: status ?? this.status,
       message: message ?? this.message,
     );
   }

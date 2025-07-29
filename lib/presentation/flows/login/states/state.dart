@@ -21,6 +21,9 @@ class LoginState {
   /// Mensaje de error o éxito.
   final String? message;
 
+  /// Indica si debe redirigir al login por error de conexión.
+  final bool shouldRedirectToLogin;
+
   const LoginState({
     this.email = '',
     this.password = '',
@@ -28,6 +31,7 @@ class LoginState {
     this.isEmailValid = true,
     this.isPasswordValid = true,
     this.message,
+    this.shouldRedirectToLogin = false,
   });
 
   /// Indica si el formulario es válido para enviar.
@@ -45,6 +49,7 @@ class LoginState {
     bool? isEmailValid,
     bool? isPasswordValid,
     String? message,
+    bool? shouldRedirectToLogin,
   }) {
     return LoginState(
       email: email ?? this.email,
@@ -53,6 +58,8 @@ class LoginState {
       isEmailValid: isEmailValid ?? this.isEmailValid,
       isPasswordValid: isPasswordValid ?? this.isPasswordValid,
       message: message ?? this.message,
+      shouldRedirectToLogin:
+          shouldRedirectToLogin ?? this.shouldRedirectToLogin,
     );
   }
 }

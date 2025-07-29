@@ -31,6 +31,13 @@ class _LoginScreenState extends BaseStatefulWidget<LoginScreen> {
         // Navegar a usuarios tras login exitoso
         context.goToUsers();
       }
+
+      // Manejar errores de conexión
+      if (next.shouldRedirectToLogin && !previous!.shouldRedirectToLogin) {
+        // Mostrar diálogo de error de conexión
+        _showConnectionErrorDialog(
+            context, next.message ?? 'Error de conexión');
+      }
     });
 
     return Scaffold(
@@ -78,6 +85,59 @@ class _LoginScreenState extends BaseStatefulWidget<LoginScreen> {
         ref.executeLoginAction(const ClearForm());
       }
     });
+  }
+
+  /// Muestra un diálogo de error de conexión.
+  void _showConnectionErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.wifi_off, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Error de Conexión'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 16),
+              const Text(
+                'Verifica:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text('• Tu conexión a internet'),
+              const Text('• Que el servidor esté funcionando'),
+              const Text('• Intenta nuevamente'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Limpiar el estado de error
+                ref.executeLoginAction(const ClearForm());
+              },
+              child: const Text('Entendido'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Intentar login nuevamente
+                ref.executeLoginAction(const SubmitLogin());
+              },
+              child: const Text('Reintentar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

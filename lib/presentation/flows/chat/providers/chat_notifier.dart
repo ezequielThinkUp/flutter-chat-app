@@ -2,6 +2,11 @@ import 'package:chat/presentation/base/base_state_notifier.dart';
 import 'package:chat/presentation/flows/chat/states/state.dart';
 import 'package:chat/presentation/flows/chat/states/action.dart';
 import 'package:chat/domain/entities/message.dart';
+import 'package:chat/domain/datasources/socket_datasource.dart';
+import 'package:chat/domain/datasources/socket_datasource.dart'
+    show SocketMessage;
+import 'package:chat/domain/repositories/messages_repository.dart';
+import 'package:chat/presentation/base/base_status.dart';
 
 /// Notifier del flujo de chat.
 ///
@@ -14,7 +19,16 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
   /// ID del usuario actual (hardcoded por ahora).
   static const String _currentUserId = '123';
 
-  ChatNotifier() : super(ChatState.initial());
+  /// DataSource para comunicación con socket.
+  final SocketDataSource _socketDataSource;
+
+  /// Repositorio para operaciones de mensajes.
+  final MessagesRepository _messagesRepository;
+
+  ChatNotifier(this._socketDataSource, this._messagesRepository)
+      : super(ChatState.initial()) {
+    _setupMessageListener();
+  }
 
   @override
   Future<void> handleAction(ChatAction action) async {
@@ -31,14 +45,26 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
       case LoadMessages():
         await _handleLoadMessages();
         break;
+      case RefreshMessages():
+        await _handleLoadMessages();
+        break;
       case ClearChat():
         _handleClearChat();
         break;
       case MarkMessagesAsRead():
         _handleMarkMessagesAsRead();
         break;
+      case MarkMessageAsRead():
+        await _handleMarkMessageAsRead(action);
+        break;
+      case MarkMessageAsDelivered():
+        await _handleMarkMessageAsDelivered(action);
+        break;
       case UpdateTypingStatus():
         _handleUpdateTypingStatus(action);
+        break;
+      case ClearMessage():
+        _handleClearMessage();
         break;
     }
   }
@@ -53,8 +79,8 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
           currentText: '',
         ));
 
-    // TODO: Cargar mensajes reales del servidor cuando esté implementado
-    // await _handleLoadMessages();
+    // Cargar mensajes reales del servidor
+    await _handleLoadMessages();
   }
 
   /// Actualiza el texto del input.
@@ -87,8 +113,23 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
             isSendingMessage: false,
           ));
 
-      // TODO: Enviar mensaje al servidor via socket
-      // await _socketService.sendMessage(message);
+      // Enviar mensaje al servidor via socket
+      if (state.recipientUserId != null) {
+        try {
+          await _socketDataSource.sendPrivateMessage(
+            recipientUid: state.recipientUserId!,
+            message: action.text.trim(),
+            type: 'texto',
+          );
+          print('💬 Mensaje enviado al servidor: ${message.content}');
+        } catch (socketError) {
+          print('⚠️ Error enviando mensaje al servidor: $socketError');
+          // El mensaje ya está en la UI, solo mostrar advertencia
+          updateState((state) => state.copyWith(
+                message: 'Mensaje enviado localmente (error de conexión)',
+              ));
+        }
+      }
 
       print('💬 Mensaje enviado: ${message.content}');
     } catch (e) {
@@ -102,33 +143,30 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
   /// Carga los mensajes del chat.
   Future<void> _handleLoadMessages() async {
     try {
-      // TODO: Cargar mensajes reales del servidor
-      // final messages = await _chatService.getMessages(recipientId);
+      if (state.recipientUserId == null) {
+        print('⚠️ No hay recipientUserId para cargar mensajes');
+        return;
+      }
 
-      // Simular carga de mensajes
-      await Future.delayed(const Duration(milliseconds: 500));
+      print(
+          '📥 Cargando mensajes entre usuarios: $_currentUserId y ${state.recipientUserId}');
 
-      final mockMessages = [
-        Message(
-          id: '1',
-          content: '¡Hola! ¿Cómo estás?',
-          senderId: state.recipientUserId ?? '',
-          receiverId: _currentUserId,
-          timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
-          status: MessageStatus.read,
-        ),
-        Message(
-          id: '2',
-          content: 'Todo bien, ¿y tú?',
-          senderId: _currentUserId,
-          receiverId: state.recipientUserId ?? '',
-          timestamp: DateTime.now().subtract(const Duration(minutes: 9)),
-          status: MessageStatus.read,
-        ),
-      ];
+      // Por ahora, vamos a usar una implementación simple
+      // que simula la carga de mensajes reales
+      await Future.delayed(const Duration(milliseconds: 300));
 
-      updateState((state) => state.copyWith(messages: mockMessages));
+      // TODO: Implementar carga real de mensajes desde la API
+      // final messages = await _messagesDataSource.getMessagesBetweenUsers(
+      //   usuario1: _currentUserId,
+      //   usuario2: state.recipientUserId!,
+      //   limite: 50,
+      // );
+
+      // Por ahora, mantener el chat vacío para que se llenen con mensajes reales
+      // que vienen del Socket.IO
+      print('✅ Chat inicializado - esperando mensajes en tiempo real');
     } catch (e) {
+      print('❌ Error cargando mensajes: $e');
       updateState((state) => state.copyWith(
             message: 'Error al cargar mensajes: $e',
           ));
@@ -160,5 +198,96 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
   /// Actualiza el estado de "está escribiendo".
   void _handleUpdateTypingStatus(UpdateTypingStatus action) {
     updateState((state) => state.copyWith(isTyping: action.isTyping));
+  }
+
+  /// Configura el listener para mensajes entrantes del Socket.IO.
+  void _setupMessageListener() {
+    _socketDataSource.messages.listen((socketMessage) {
+      print('📨 Mensaje recibido del socket: ${socketMessage.message}');
+
+      // Verificar si el mensaje es para este chat
+      if (state.recipientUserId != null &&
+          (socketMessage.from == state.recipientUserId ||
+              socketMessage.to == state.recipientUserId)) {
+        // Convertir el mensaje del socket a nuestra entidad Message
+        final message = Message(
+          id: socketMessage.timestamp.toString(),
+          content: socketMessage.message,
+          senderId: socketMessage.from,
+          receiverId: socketMessage.to ?? _currentUserId,
+          timestamp: socketMessage.timestamp,
+          status: socketMessage.delivered == true
+              ? MessageStatus.delivered
+              : MessageStatus.sent,
+        );
+
+        // Agregar el mensaje a la lista
+        final updatedMessages = [...state.messages, message];
+        updateState((state) => state.copyWith(messages: updatedMessages));
+
+        print('✅ Mensaje agregado al chat: ${message.content}');
+      }
+    });
+  }
+
+  /// Marca un mensaje específico como leído.
+  Future<void> _handleMarkMessageAsRead(MarkMessageAsRead action) async {
+    try {
+      final success =
+          await _messagesRepository.markMessageAsRead(action.messageId);
+      if (success) {
+        // Actualizar el estado del mensaje en la lista local
+        final updatedMessages = state.messages.map((message) {
+          if (message.id == action.messageId) {
+            return message.copyWith(status: MessageStatus.read);
+          }
+          return message;
+        }).toList();
+
+        updateState((state) => state.copyWith(messages: updatedMessages));
+        print('✅ Mensaje marcado como leído: ${action.messageId}');
+      }
+    } catch (e) {
+      print('❌ Error marcando mensaje como leído: $e');
+      updateState((state) => state.copyWith(
+            status: BaseStatus.error,
+            message: 'Error marcando mensaje como leído: $e',
+          ));
+    }
+  }
+
+  /// Marca un mensaje específico como entregado.
+  Future<void> _handleMarkMessageAsDelivered(
+      MarkMessageAsDelivered action) async {
+    try {
+      final success =
+          await _messagesRepository.markMessageAsDelivered(action.messageId);
+      if (success) {
+        // Actualizar el estado del mensaje en la lista local
+        final updatedMessages = state.messages.map((message) {
+          if (message.id == action.messageId) {
+            return message.copyWith(status: MessageStatus.delivered);
+          }
+          return message;
+        }).toList();
+
+        updateState((state) => state.copyWith(messages: updatedMessages));
+        print('✅ Mensaje marcado como entregado: ${action.messageId}');
+      }
+    } catch (e) {
+      print('❌ Error marcando mensaje como entregado: $e');
+      updateState((state) => state.copyWith(
+            status: BaseStatus.error,
+            message: 'Error marcando mensaje como entregado: $e',
+          ));
+    }
+  }
+
+  /// Limpia el mensaje de error/estado.
+  void _handleClearMessage() {
+    updateState((state) => state.copyWith(
+          status: BaseStatus.initial,
+          message: null,
+        ));
   }
 }

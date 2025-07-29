@@ -3,13 +3,19 @@ import 'package:chat/presentation/base/base_provider.dart';
 import 'package:chat/presentation/flows/chat/providers/chat_notifier.dart';
 import 'package:chat/presentation/flows/chat/states/state.dart';
 import 'package:chat/presentation/flows/chat/states/action.dart';
+import 'package:chat/infrastructure/providers/datasources/socket_datasource_provider.dart';
+import 'package:chat/infrastructure/providers/messages_repository_provider.dart';
 
 /// Provider del flujo de chat.
 ///
 /// Utiliza BaseProvider para encapsular la creación y configuración
 /// del StateNotifierProvider con funcionalidades adicionales.
 final chatProvider = BaseProvider<ChatNotifier, ChatState, ChatAction>(
-  (ref) => ChatNotifier(),
+  (ref) {
+    final socketDataSource = ref.watch(socketDataSourceProvider);
+    final messagesRepository = ref.watch(messagesRepositoryProvider);
+    return ChatNotifier(socketDataSource, messagesRepository);
+  },
 );
 
 /// Extension methods para facilitar el uso del provider.
@@ -58,6 +64,22 @@ extension ChatProviderX on WidgetRef {
 
   void markMessagesAsRead() {
     executeChatAction(const MarkMessagesAsRead());
+  }
+
+  void markMessageAsRead(String messageId) {
+    executeChatAction(MarkMessageAsRead(messageId));
+  }
+
+  void markMessageAsDelivered(String messageId) {
+    executeChatAction(MarkMessageAsDelivered(messageId));
+  }
+
+  void refreshMessages() {
+    executeChatAction(const RefreshMessages());
+  }
+
+  void clearMessage() {
+    executeChatAction(const ClearMessage());
   }
 
   void updateTypingStatus(bool isTyping) {

@@ -71,3 +71,35 @@ class UpdateTypingStatus extends ChatAction {
 
   List<Object?> get props => [isTyping];
 }
+
+/// Marcar un mensaje específico como leído.
+class MarkMessageAsRead extends ChatAction {
+  final String messageId;
+
+  const MarkMessageAsRead(this.messageId);
+
+  List<Object?> get props => [messageId];
+}
+
+/// Marcar un mensaje específico como entregado.
+class MarkMessageAsDelivered extends ChatAction {
+  final String messageId;
+
+  const MarkMessageAsDelivered(this.messageId);
+
+  List<Object?> get props => [messageId];
+}
+
+/// Refrescar mensajes del chat.
+class RefreshMessages extends ChatAction {
+  const RefreshMessages();
+
+  List<Object?> get props => [];
+}
+
+/// Limpiar mensaje de error/estado.
+class ClearMessage extends ChatAction {
+  const ClearMessage();
+
+  List<Object?> get props => [];
+}

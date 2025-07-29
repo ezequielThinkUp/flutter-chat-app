@@ -8,16 +8,16 @@ class Environment {
     if (Platform.isAndroid) {
       // Detectar si es emulador o dispositivo físico
       return _isAndroidEmulator()
-          ? 'http://10.0.2.2:3000/api' // Emulador Android
-          : 'http://192.168.181.75:3000/api'; // Dispositivo físico Android
+          ? 'http://10.0.2.2:3000' // Emulador Android
+          : 'http://192.168.181.75:3000'; // Dispositivo físico Android
     } else if (Platform.isIOS) {
       // Detectar si es simulador o dispositivo físico
       return _isIOSSimulator()
-          ? 'http://localhost:3000/api' // Simulador iOS
-          : 'http://192.168.181.75:3000/api'; // Dispositivo físico iOS
+          ? 'http://localhost:3000' // Simulador iOS
+          : 'http://192.168.181.75:3000'; // Dispositivo físico iOS
     } else {
       // Otras plataformas (Web, Desktop)
-      return 'http://localhost:3000/api';
+      return 'http://localhost:3000';
     }
   }
 

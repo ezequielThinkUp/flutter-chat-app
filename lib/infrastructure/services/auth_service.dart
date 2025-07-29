@@ -14,28 +14,28 @@ abstract class AuthService {
   factory AuthService(Dio dio, {String baseUrl}) = _AuthService;
 
   /// Realiza login con credenciales.
-  @POST('/auth/login')
+  @POST('/api/auth/login')
   Future<AuthResponseModel> login(@Body() Map<String, dynamic> credentials);
 
   /// Realiza logout.
-  @POST('/auth/logout')
+  @POST('/api/auth/logout')
   Future<void> logout();
 
   /// Renueva el token de autenticación.
-  @POST('/auth/renew')
+  @POST('/api/auth/renew')
   Future<AuthResponseModel> refreshToken(
       @Body() Map<String, dynamic> tokenData);
 
   /// Obtiene todos los usuarios.
-  @GET('/users')
+  @GET('/api/users')
   Future<dynamic> getUsers();
 
   /// Obtiene usuarios online.
-  @GET('/users/online')
+  @GET('/api/users/online')
   Future<dynamic> getOnlineUsers();
 
   /// Obtiene un usuario por ID.
-  @GET('/users/{id}')
+  @GET('/api/users/{id}')
   Future<dynamic> getUserById(@Path('id') String userId);
 }
 

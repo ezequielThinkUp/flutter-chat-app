@@ -35,7 +35,7 @@ class _AuthService implements AuthService {
     )
         .compose(
           _dio.options,
-          '/auth/login',
+          '/api/auth/login',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -68,7 +68,7 @@ class _AuthService implements AuthService {
     )
         .compose(
           _dio.options,
-          '/auth/logout',
+          '/api/auth/logout',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -94,7 +94,7 @@ class _AuthService implements AuthService {
     )
         .compose(
           _dio.options,
-          '/auth/renew',
+          '/api/auth/renew',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -127,7 +127,7 @@ class _AuthService implements AuthService {
     )
         .compose(
           _dio.options,
-          '/users',
+          '/api/users',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -154,7 +154,7 @@ class _AuthService implements AuthService {
     )
         .compose(
           _dio.options,
-          '/users/online',
+          '/api/users/online',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -181,7 +181,7 @@ class _AuthService implements AuthService {
     )
         .compose(
           _dio.options,
-          '/users/${userId}',
+          '/api/users/${userId}',
           queryParameters: queryParameters,
           data: _data,
         )

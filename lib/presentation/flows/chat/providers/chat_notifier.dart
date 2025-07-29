@@ -3,12 +3,12 @@ import 'package:chat/presentation/flows/chat/states/state.dart';
 import 'package:chat/presentation/flows/chat/states/action.dart';
 import 'package:chat/domain/entities/message.dart';
 import 'package:chat/domain/datasources/socket_datasource.dart';
-import 'package:chat/domain/datasources/socket_datasource.dart'
-    show SocketMessage;
 import 'package:chat/domain/usecases/messages/get_messages_between_users_usecase.dart';
 import 'package:chat/domain/usecases/messages/mark_message_as_read_usecase.dart';
 import 'package:chat/domain/usecases/messages/mark_message_as_delivered_usecase.dart';
 import 'package:chat/presentation/base/base_status.dart';
+import 'package:chat/domain/repositories/auth_repository.dart'; // Added import for AuthRepository
+import 'package:chat/infrastructure/utils/jwt_utils.dart'; // Added import for JwtUtils
 
 /// Notifier del flujo de chat.
 ///
@@ -18,8 +18,8 @@ import 'package:chat/presentation/base/base_status.dart';
 /// - Gestión de usuarios conectados
 /// - Integración con socket para tiempo real
 class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
-  /// ID del usuario actual (hardcoded por ahora).
-  static const String _currentUserId = '123';
+  /// ID del usuario actual (se obtiene dinámicamente).
+  String? _currentUserId;
 
   /// DataSource para comunicación con socket.
   final SocketDataSource _socketDataSource;
@@ -29,11 +29,15 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
   final MarkMessageAsReadUseCase _markMessageAsReadUseCase;
   final MarkMessageAsDeliveredUseCase _markMessageAsDeliveredUseCase;
 
+  /// Repository para operaciones de autenticación.
+  final AuthRepository _authRepository;
+
   ChatNotifier(
     this._socketDataSource,
     this._getMessagesUseCase,
     this._markMessageAsReadUseCase,
     this._markMessageAsDeliveredUseCase,
+    this._authRepository,
   ) : super(ChatState.initial()) {
     _setupMessageListener();
   }
@@ -101,13 +105,23 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
     if (action.text.trim().isEmpty || state.isSendingMessage) return;
 
     try {
+      // Obtener el ID del usuario actual
+      final currentUser = await _authRepository.getCurrentUser();
+      if (currentUser == null) {
+        updateState((state) => state.copyWith(
+              message: 'Usuario no autenticado. Por favor, inicie sesión.',
+            ));
+        return;
+      }
+      _currentUserId = currentUser.id;
+
       updateState((state) => state.copyWith(isSendingMessage: true));
 
       // Crear el mensaje local inmediatamente
       final message = Message(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         content: action.text.trim(),
-        senderId: _currentUserId,
+        senderId: _currentUserId!,
         receiverId: state.recipientUserId ?? '',
         timestamp: DateTime.now(),
         status: MessageStatus.sent,
@@ -156,12 +170,49 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
         return;
       }
 
+      // Obtener el ID del usuario actual
+      final currentUser = await _authRepository.getCurrentUser();
+      if (currentUser == null) {
+        print('❌ No hay usuario autenticado');
+        updateState((state) => state.copyWith(
+              message: 'Usuario no autenticado. Por favor, inicie sesión.',
+            ));
+        return;
+      }
+      _currentUserId = currentUser.id;
+
       print(
           '📥 Cargando mensajes entre usuarios: $_currentUserId y ${state.recipientUserId}');
 
+      // DEBUG: Verificar token antes de hacer la petición
+      final token = await _authRepository.getCurrentToken();
+      if (token != null) {
+        print('🔐 Token disponible: ${token.substring(0, 20)}...');
+
+        // Verificar si el token está expirado
+        if (JwtUtils.isTokenExpired(token)) {
+          print('⚠️ Token expirado!');
+          updateState((state) => state.copyWith(
+                message: 'Token expirado. Por favor, inicie sesión nuevamente.',
+              ));
+          return;
+        }
+
+        // Decodificar token para verificar contenido
+        final tokenInfo = JwtUtils.decodeToken(token);
+        print('🔍 Token info: $tokenInfo');
+      } else {
+        print('❌ No hay token disponible');
+        updateState((state) => state.copyWith(
+              message:
+                  'No hay token de autenticación disponible. Por favor, inicie sesión.',
+            ));
+        return;
+      }
+
       // Cargar mensajes reales desde la API usando el use case
       final messages = await _getMessagesUseCase.execute(
-        usuario1: _currentUserId,
+        usuario1: _currentUserId!,
         usuario2: state.recipientUserId!,
         limite: 50,
       );
@@ -219,7 +270,7 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
           id: socketMessage.timestamp.toString(),
           content: socketMessage.message,
           senderId: socketMessage.from,
-          receiverId: socketMessage.to ?? _currentUserId,
+          receiverId: socketMessage.to ?? _currentUserId!,
           timestamp: socketMessage.timestamp,
           status: socketMessage.delivered == true
               ? MessageStatus.delivered

@@ -45,7 +45,7 @@ class _MessagesService implements MessagesService {
     )
         .compose(
           _dio.options,
-          '/mensajes/entre-usuarios',
+          '/api/mensajes/entre-usuarios',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -78,7 +78,7 @@ class _MessagesService implements MessagesService {
     )
         .compose(
           _dio.options,
-          '/mensajes/ultimo',
+          '/api/mensajes/ultimo',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -105,7 +105,7 @@ class _MessagesService implements MessagesService {
     )
         .compose(
           _dio.options,
-          '/mensajes/no-leidos',
+          '/api/mensajes/no-leidos',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -132,7 +132,7 @@ class _MessagesService implements MessagesService {
     )
         .compose(
           _dio.options,
-          '/mensajes/${mensajeId}/leido',
+          '/api/mensajes/${mensajeId}/leido',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -159,7 +159,7 @@ class _MessagesService implements MessagesService {
     )
         .compose(
           _dio.options,
-          '/mensajes/${mensajeId}/entregado',
+          '/api/mensajes/${mensajeId}/entregado',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -197,7 +197,7 @@ class _MessagesService implements MessagesService {
     )
         .compose(
           _dio.options,
-          '/mensajes/buscar',
+          '/api/mensajes/buscar',
           queryParameters: queryParameters,
           data: _data,
         )

@@ -205,6 +205,31 @@ class SecureStorage {
       return null;
     }
   }
+
+  /// Método de debug para verificar el token actual
+  Future<void> debugToken() async {
+    try {
+      final token = await getToken();
+      if (token != null) {
+        print('🔍 DEBUG TOKEN:');
+        print('   - Token: ${token.substring(0, 20)}...');
+        print('   - Longitud: ${token.length}');
+        print('   - Es válido: ${await isTokenValid()}');
+
+        // Verificar si expira pronto
+        final expiry = await getTokenExpiry();
+        if (expiry != null) {
+          print('   - Expira en: $expiry');
+          print(
+              '   - Expira pronto: ${DateTime.now().add(const Duration(minutes: 5)).isAfter(expiry)}');
+        }
+      } else {
+        print('❌ DEBUG: No hay token guardado');
+      }
+    } catch (e) {
+      print('❌ DEBUG: Error verificando token: $e');
+    }
+  }
 }
 
 /// Datos de una sesión de autenticación.

@@ -9,12 +9,12 @@ class Environment {
       // Detectar si es emulador o dispositivo físico
       return _isAndroidEmulator()
           ? 'http://10.0.2.2:3000' // Emulador Android
-          : 'http://192.168.181.75:3000'; // Dispositivo físico Android
+          : 'http://192.168.181.80:3000'; // Dispositivo físico Android
     } else if (Platform.isIOS) {
       // Detectar si es simulador o dispositivo físico
       return _isIOSSimulator()
           ? 'http://localhost:3000' // Simulador iOS
-          : 'http://192.168.181.75:3000'; // Dispositivo físico iOS
+          : 'http://192.168.181.80:3000'; // Dispositivo físico iOS
     } else {
       // Otras plataformas (Web, Desktop)
       return 'http://localhost:3000';
@@ -27,12 +27,12 @@ class Environment {
       // Detectar si es emulador o dispositivo físico
       return _isAndroidEmulator()
           ? 'http://10.0.2.2:3000' // Emulador Android
-          : 'http://192.168.181.75:3000'; // Dispositivo físico Android
+          : 'http://192.168.181.80:3000'; // Dispositivo físico Android
     } else if (Platform.isIOS) {
       // Detectar si es simulador o dispositivo físico
       return _isIOSSimulator()
           ? 'http://localhost:3000' // Simulador iOS
-          : 'http://192.168.181.75:3000'; // Dispositivo físico iOS
+          : 'http://192.168.181.80:3000'; // Dispositivo físico iOS
     } else {
       // Otras plataformas (Web, Desktop)
       return 'http://localhost:3000';

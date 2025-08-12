@@ -115,24 +115,9 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
       }
       _currentUserId = currentUser.id;
 
-      updateState((state) => state.copyWith(isSendingMessage: true));
-
-      // Crear el mensaje local inmediatamente
-      final message = Message(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: action.text.trim(),
-        senderId: _currentUserId!,
-        receiverId: state.recipientUserId ?? '',
-        timestamp: DateTime.now(),
-        status: MessageStatus.sent,
-      );
-
-      // Agregar mensaje a la lista
-      final updatedMessages = [...state.messages, message];
       updateState((state) => state.copyWith(
-            messages: updatedMessages,
-            currentText: '', // Limpiar input
-            isSendingMessage: false,
+            isSendingMessage: true,
+            currentText: '', // Limpiar input inmediatamente
           ));
 
       // Enviar mensaje al servidor via socket
@@ -143,17 +128,16 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
             message: action.text.trim(),
             type: 'texto',
           );
-          print('💬 Mensaje enviado al servidor: ${message.content}');
+          print('💬 Mensaje enviado al servidor: ${action.text.trim()}');
         } catch (socketError) {
           print('⚠️ Error enviando mensaje al servidor: $socketError');
-          // El mensaje ya está en la UI, solo mostrar advertencia
           updateState((state) => state.copyWith(
-                message: 'Mensaje enviado localmente (error de conexión)',
+                message: 'Error enviando mensaje: $socketError',
               ));
         }
       }
 
-      print('💬 Mensaje enviado: ${message.content}');
+      updateState((state) => state.copyWith(isSendingMessage: false));
     } catch (e) {
       updateState((state) => state.copyWith(
             isSendingMessage: false,
@@ -265,6 +249,22 @@ class ChatNotifier extends BaseStateNotifier<ChatState, ChatAction> {
       if (state.recipientUserId != null &&
           (socketMessage.from == state.recipientUserId ||
               socketMessage.to == state.recipientUserId)) {
+        // Verificar si el mensaje ya existe (evitar duplicados)
+        final messageExists = state.messages.any((existingMessage) =>
+            existingMessage.content == socketMessage.message &&
+            existingMessage.senderId == socketMessage.from &&
+            existingMessage.timestamp
+                    .difference(socketMessage.timestamp)
+                    .abs()
+                    .inSeconds <
+                5);
+
+        if (messageExists) {
+          print(
+              '⚠️ Mensaje duplicado detectado, ignorando: ${socketMessage.message}');
+          return;
+        }
+
         // Convertir el mensaje del socket a nuestra entidad Message
         final message = Message(
           id: socketMessage.timestamp.toString(),

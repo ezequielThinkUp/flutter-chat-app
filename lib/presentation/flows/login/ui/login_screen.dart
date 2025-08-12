@@ -38,6 +38,15 @@ class _LoginScreenState extends BaseStatefulWidget<LoginScreen> {
         _showConnectionErrorDialog(
             context, next.message ?? 'Error de conexión');
       }
+
+      // Manejar errores de autenticación (no de conexión)
+      if (next.message != null &&
+          next.message!.contains('Error') &&
+          !next.shouldRedirectToLogin &&
+          (previous?.message ?? '') != next.message) {
+        // Mostrar alert de error de autenticación
+        _showAuthErrorAlert(context, next.message!);
+      }
     });
 
     return Scaffold(
@@ -53,8 +62,8 @@ class _LoginScreenState extends BaseStatefulWidget<LoginScreen> {
       ),
       body: ContentStateWidget(
         isLoading: state.isLoading,
-        errorMessage:
-            state.message?.contains('Error') == true ? state.message : null,
+        // No mostrar error aquí porque lo manejamos con diálogo personalizado
+        errorMessage: null,
         child: SafeArea(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -121,8 +130,10 @@ class _LoginScreenState extends BaseStatefulWidget<LoginScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // Limpiar el estado de error
+                // Limpiar el estado de error y redirigir al login
                 ref.executeLoginAction(const ClearForm());
+                // Redirigir al login usando GoRouter
+                context.goToLogin();
               },
               child: const Text('Entendido'),
             ),
@@ -133,6 +144,48 @@ class _LoginScreenState extends BaseStatefulWidget<LoginScreen> {
                 ref.executeLoginAction(const SubmitLogin());
               },
               child: const Text('Reintentar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Muestra un alert de error de autenticación.
+  void _showAuthErrorAlert(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red),
+              const SizedBox(width: 8),
+              const Flexible(
+                child: Text(
+                  'Error de Autenticación',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Text(
+              message,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Limpiar el estado de error
+                ref.executeLoginAction(const ClearForm());
+              },
+              child: const Text('OK'),
             ),
           ],
         );
